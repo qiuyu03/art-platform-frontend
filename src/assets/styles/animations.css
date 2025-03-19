@@ -1,0 +1,21 @@
+@keyframes quantum-pulse {
+  0% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 0.2; transform: scale(1.05); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
+ 
+@keyframes hologram-flicker {
+  0% { filter: hue-rotate(0deg) contrast(1); }
+  25% { filter: hue-rotate(5deg) contrast(1.2); }
+  50% { filter: hue-rotate(-3deg) contrast(0.9); }
+  75% { filter: hue-rotate(2deg) contrast(1.1); }
+  100% { filter: hue-rotate(0deg) contrast(1); }
+}
+ 
+.neural-activity {
+  animation: quantum-pulse 1.5s ease-in-out infinite;
+}
+ 
+.generative-loading {
+  animation: hologram-flicker 0.8s steps(10) infinite;
+}
