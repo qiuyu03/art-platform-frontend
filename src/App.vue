@@ -1,79 +1,68 @@
 <template>
   <div class="app-container" :style="globalStyles">
-    <!-- 全息投影层 -->
-    <SketchCanvas ref="hologramCanvas" class="quantum-hologram" />
+    <!-- 导航控制 -->
+    <AppNavbar 
+      @theme-change="toggleTheme"
+      :current-theme="theme"
+    />
  
-    <main class="neural-interface">
-      <!-- 导航控制 -->
-      <AppNavbar 
-        @theme-change="toggleTheme"
-        :current-theme="theme"
-      />
- 
-      <!-- 生成矩阵 -->
-      <div class="generation-matrix">
-        <!-- 参数控制区 -->
-        <div class="control-matrix">
-          <MusicControls 
-            v-model:bpm="musicParams.bpm" 
-            v-model:duration="musicParams.duration" 
-            class="neural-card"
-          />
-          <StyleControls 
-            :params="uiParams"
-            @param-update="queueStyleUpdate"
-            class="neural-card"
-          />
-        </div>
- 
-        <!-- 核心画布 -->
-        <div class="quantum-core">
-          <ImageGenerator 
-            ref="imageGen"
-            :prompt="imagePrompt"
-            :steps="imageParams.steps" 
-            @generate-start="handleVisualGeneration"
-            class="hologram-surface"
-          />
-        </div>
- 
-        <!-- 生成控制台 -->
-        <div class="generation-console">
-          <TextGenerator 
-            :content="generationLog"
-            class="neural-feed"
-          />
-          <MusicGenerator 
-            :disabled="isGenerating"
-            @generate="handleAudioGeneration"
-            class="quantum-trigger"
-          />
-        </div>
+    <!-- 生成矩阵 -->
+    <div class="generation-matrix">
+      <!-- 参数控制区 -->
+      <div class="control-matrix">
+        <MusicControls 
+          v-model:bpm="musicParams.bpm" 
+          v-model:duration="musicParams.duration" 
+          class="neural-card"
+        />
+        <StyleControls 
+          :params="uiParams"
+          @param-update="queueStyleUpdate"
+          class="neural-card"
+        />
       </div>
-    </main>
+ 
+      <!-- 核心画布 -->
+      <div class="quantum-core">
+        <ImageGenerator 
+          ref="imageGen"
+          :prompt="imagePrompt"
+          :steps="imageParams.steps" 
+          @generate-start="handleVisualGeneration"
+          class="hologram-surface"
+        />
+      </div>
+ 
+      <!-- 生成控制台 -->
+      <div class="generation-console">
+        <TextGenerator 
+          :content="generationLog"
+          class="neural-feed"
+        />
+        <MusicGenerator 
+          :disabled="isGenerating"
+          @generate="handleAudioGeneration"
+          class="quantum-trigger"
+        />
+      </div>
+    </div>
   </div>
 </template>
  
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 // 核心逻辑层 
-import { useCanvas } from '../api/composables/useCanvas'
 import { useStyleControls } from '../api/composables/useStyleControls'
 import { useImageGeneration } from '../api/composables/useImageGeneration'
- 
+
 // 原子组件层 
 import AppNavbar from '@/components/AppNavbar.vue' 
-import SketchCanvas from '@/components/canvas/SketchCanvas.vue' 
 import MusicControls from '@/components/controls/MusicControls.vue' 
 import StyleControls from '@/components/controls/StyleControls.vue' 
 import ImageGenerator from '@/components/generators/ImageGenerator.vue' 
 import MusicGenerator from '@/components/generators/MusicGenerator.vue' 
 import TextGenerator from '@/components/generators/TextGenerator.vue' 
- 
-// 量子状态初始化 
-const hologramCanvas = ref(null)
-const { ctx: hologramCtx } = useCanvas(hologramCanvas)
- 
+
 const { 
   theme,
   uiParams,
@@ -81,28 +70,28 @@ const {
   toggleTheme,
   queueStyleUpdate 
 } = useStyleControls('dark')
- 
+
 const {
   generateMusic,
   generateImage,
   isGenerating
 } = useImageGeneration()
- 
+
 // 响应式数据场 
 const musicParams = reactive({
   bpm: 128,
   duration: 60,
   chordType: '量子叠加和弦'
 })
- 
+
 const imagePrompt = ref('赛博神经音乐可视化矩阵')
 const imageParams = reactive({
   steps: 75,
   creativity: 9.5 
 })
- 
+
 const generationLog = ref('## 系统就绪\n量子生成引擎待命')
- 
+
 // 事件处理器 
 const handleVisualGeneration = async () => {
   generationLog.value  = '## 视觉生成启动\n正在解构多维空间参数'
@@ -111,16 +100,16 @@ const handleVisualGeneration = async () => {
     params: imageParams 
   })
 }
- 
+
 const handleAudioGeneration = async () => {
   generationLog.value  = '## 音频生成启动\n构建混沌振荡场'
   const audio = await generateMusic(musicParams)
   audio.play() 
 }
- 
+
 // 生命周期同步 
 onMounted(() => {
-  hologramCtx.value?.initializeParticleSystem() 
+  // 如果有其他初始化操作可以在这里进行
 })
 </script>
  
