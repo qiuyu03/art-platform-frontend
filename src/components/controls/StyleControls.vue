@@ -26,22 +26,42 @@
     </div>
   </div>
 </template>
- 
+
 <script setup>
 import { ref, watch } from 'vue'
 import { defineEmits } from 'vue'
- 
+
 const emit = defineEmits(['update:modelValue'])
- 
+
 const styleParams = ref({
   selectedEmotion: '热血',
   selectedColor: '#ff4500',
   contrast: 80,
   emotions: ['热血', '悲伤', '温馨', '科幻']
 })
- 
-// 响应式更新 
+
+// 响应式更新
 watch(styleParams, (newVal) => {
   emit('update:modelValue', newVal)
 }, { deep: true })
+
+const selectEmotion = (emotion) => {
+  styleParams.value.selectedEmotion = emotion
+}
 </script>
+
+<style scoped>
+/* 添加一些基本样式 */
+.control-group {
+  padding: 20px;
+}
+
+.emotion-selector button {
+  margin-right: 10px;
+}
+
+.active {
+  background-color: #ff4500;
+  color: white;
+}
+</style>

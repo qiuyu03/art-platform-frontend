@@ -1,8 +1,18 @@
 {
-  "build": {
-    "env": {
-      "NPM_FLAGS": "--legacy-peer-deps", 
-      "CI": "false"                    
+  "builds": [
+    {
+      "src": "package.json", 
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ],
+  "functions": {
+    "api/*.js": {
+      "memory": 1024,
+      "maxDuration": 10 
     }
   }
 }

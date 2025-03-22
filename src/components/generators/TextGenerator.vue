@@ -1,121 +1,121 @@
-<template>
-  <div class="text-generator">
-    <div class="output-container">
-      <div class="generated-text" v-html="formattedText"></div>
-      <div v-if="isGenerating" class="loading-indicator">
-        <div class="spinner"></div>
-        <span>生成进度 {{ progress }}%</span>
-      </div>
-    </div>
-
-    <div class="controls">
-      <button @click="regenerate" :disabled="isGenerating">
-        重新生成 
-      </button>
-      <button @click="copyText">
-        复制文本 
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { computed, defineProps, defineEmits } from 'vue'
-import { marked } from 'marked'
-
-const props = defineProps({
-  content: String,
-  isGenerating: Boolean,
-  progress: Number 
-})
-
-const emit = defineEmits(['regenerate', 'update:content'])
-
-const formattedText = computed(() => {
-  return marked(props.content || '*等待生成...*')
-})
-
-const regenerate = () => {
-  if (!props.isGenerating) {
-    emit('regenerate')
-  }
-}
-
-const copyText = async () => {
+import { ref } from 'vue';
+ 
+const keywords = ref('');
+const emotion = ref('热血');
+const generatedText = ref('');
+const isLoading = ref(false);
+const errorMessage = ref('');
+ 
+const generate = async () => {
   try {
-    await navigator.clipboard.writeText(props.content)
+    isLoading.value  = true;
+    errorMessage.value  = '';
+    
+    const response = await fetch('http://localhost:3000/api/text/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        keywords: keywords.value.split(/[, ，]/),
+        emotion: emotion.value  
+      })
+    });
+ 
+    const data = await response.json(); 
+    
+    if (!data.success)  throw new Error(data.error); 
+    
+    generatedText.value  = data.content.replace(/\n/g,  '<br>');
+    
   } catch (err) {
-    console.error('Failed to copy text: ', err)
+    errorMessage.value  = `生成失败: ${err.message}`; 
+  } finally {
+    isLoading.value  = false;
   }
-}
+};
 </script>
  
+<template>
+  <div class="generator">
+    <div class="input-group">
+      <input 
+        v-model="keywords"
+        placeholder="输入关键词（用逗号分隔）"
+        class="keyword-input"
+      >
+      <select v-model="emotion" class="emotion-select">
+        <option value="热血">热血</option>
+        <option value="温馨">温馨</option>
+      </select>
+      <button 
+        @click="generate"
+        :disabled="isLoading"
+        class="generate-btn"
+      >
+        {{ isLoading ? '生成中...' : '开始生成' }}
+      </button>
+    </div>
+ 
+    <div v-if="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+ 
+    <div 
+      v-html="generatedText"
+      class="output-area"
+    ></div>
+  </div>
+</template>
+ 
 <style scoped>
-.text-generator {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: white;
+.generator {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1rem;
 }
  
-.output-container {
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+ 
+.keyword-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+ 
+.emotion-select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+ 
+.generate-btn {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+ 
+.generate-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+ 
+.output-area {
+  border: 1px solid #ddd;
+  padding: 1rem;
   min-height: 200px;
-  padding: 1.5rem;
-  position: relative;
-}
- 
-.generated-text {
-  line-height: 1.8;
   white-space: pre-wrap;
 }
  
-.loading-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  color: #666;
-}
- 
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #3498db;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
- 
-.controls {
-  border-top: 1px solid #eee;
-  padding: 1rem;
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-}
- 
-button {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #f8f9fa;
-  cursor: pointer;
-  transition: all 0.2s;
- 
-  &:hover {
-    background: #e9ecef;
-  }
- 
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-}
- 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.error-message {
+  color: #dc3545;
+  margin: 1rem 0;
 }
 </style>

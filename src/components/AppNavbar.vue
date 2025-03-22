@@ -14,7 +14,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: #0fe5f0;
+  background: #6cf0e5;
   color: white;
 }
 </style>

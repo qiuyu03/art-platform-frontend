@@ -1,7 +1,7 @@
 <template>
   <div class="input-group">
     <h3>草图绘制 <button @click="clearCanvas">清空</button></h3>
-    <canvas ref="canvasElement" width="400" height="300"></canvas>
+    <canvas ref="canvasElement" width="1200" height="700"></canvas>
   </div>
 </template>
 

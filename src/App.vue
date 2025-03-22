@@ -57,9 +57,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 // 核心逻辑层 
-import { useCanvas } from '@/composables/useCanvas'
-import { useStyleControls } from '@/composables/useStyleControls'
-import { useGenerativeAI } from '@/composables/useGenerativeAI'
+import { useCanvas } from '../api/composables/useCanvas'
+import { useStyleControls } from '../api/composables/useStyleControls'
+import { useImageGeneration } from '../api/composables/useImageGeneration'
  
 // 原子组件层 
 import AppNavbar from '@/components/AppNavbar.vue' 
@@ -86,7 +86,7 @@ const {
   generateMusic,
   generateImage,
   isGenerating
-} = useGenerativeAI()
+} = useImageGeneration()
  
 // 响应式数据场 
 const musicParams = reactive({
