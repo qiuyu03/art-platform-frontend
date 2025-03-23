@@ -1,15 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getRuleByEmotion } = require('./utils/ruleLoader');
+const { loadRules } = require('./utils/ruleLoader');
 const axios = require('axios');
 
-// 中间件：根据图像模块参数调整规则
 router.use((req, res, next) => {
-  // 接收来自图像模块的参数 
-  if (req.body.imageParams) {
+  if (req.body && req.body.imageParams) {
     const { palette, style } = req.body.imageParams;
 
-    // 根据图像参数调整规则 
     if (style === '水墨风') {
       req.body.emotion = req.body.emotion || '古典';
     }
@@ -22,11 +19,9 @@ router.use((req, res, next) => {
   next();
 });
 
-// POST /generate 路由处理函数
-router.post('/generate', async (req, res) => {
+router.post('/', async (req, res) => {
   const { keywords, emotion = 'default' } = req.body;
 
-  // 确保 keywords 是一个数组
   if (!Array.isArray(keywords)) {
     return res.status(400).json({
       success: false,
@@ -34,17 +29,23 @@ router.post('/generate', async (req, res) => {
     });
   }
 
-  // 获取规则参数 
-  const rule = getRuleByEmotion(emotion);
-
-  // 构建提示词 
-  const prompt = `根据以下要素创作内容：
-  关键词：${keywords.join(', ')}
-  要求：${rule.text?.keywords?.join('、') || ''}
-  节奏：${rule.text?.叙事节奏 || '适中'}
-  字数限制：300字以内`;
-
   try {
+    const rule = await loadRules(emotion); // 等待规则加载完成
+
+    if (!rule || !rule.text) {
+      console.error('无效规则:', rule);
+      return res.status(500).json({
+        success: false,
+        error: '无法获取有效的规则，请检查数据库'
+      });
+    }
+
+    const prompt = `根据以下要素创作内容：
+    关键词：${keywords.join(', ')}
+    要求：${rule.text?.keywords?.join('、') || ''}
+    节奏：${rule.text?.叙事节奏 || '适中'}
+    字数限制：300字以内`;
+
     const response = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',
       {

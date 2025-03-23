@@ -1,121 +1,119 @@
+<template>
+  <div class="generator-card">
+    <div class="input-group">
+      <input 
+        v-model="inputKeywords" 
+        placeholder="输入关键词（用逗号分隔）"
+        @keyup.enter="handleGenerate" 
+      />
+      <select v-model="selectedEmotion">
+        <option v-for="emotion in emotionOptions" :key="emotion">
+          {{ emotion }}
+        </option>
+      </select>
+    </div>
+    
+    <button 
+      :disabled="isGenerating"
+      @click="handleGenerate"
+    >
+      {{ isGenerating ? '生成中...' : '开始创作' }}
+    </button>
+
+    <div v-if="error" class="error-message">
+      {{ error }}
+    </div>
+
+    <div v-if="generatedText" class="output-box">
+      <pre>{{ generatedText }}</pre>
+    </div>
+  </div>
+</template>
+
 <script setup>
 import { ref } from 'vue';
- 
-const keywords = ref('');
-const emotion = ref('热血');
+
+const inputKeywords = ref('');
+const selectedEmotion = ref('默认');
 const generatedText = ref('');
-const isLoading = ref(false);
-const errorMessage = ref('');
- 
-const generate = async () => {
+const isGenerating = ref(false);
+const error = ref('');
+
+// 从环境变量加载情感选项
+const emotionOptions = JSON.parse(process.env.VUE_APP_EMOTION_OPTIONS || '["默认","热血","悲伤"]');
+
+// 从环境变量加载后端地址
+// const API_BASE_URL = process.env.SERVER_PORT || 'http://localhost:3001';
+const API_BASE_URL = ''; // 使用相对路径
+
+const handleGenerate = async () => {
   try {
-    isLoading.value  = true;
-    errorMessage.value  = '';
-    
-    const response = await fetch('http://localhost:3000/api/text/generate', {
+    isGenerating.value = true;
+    error.value = '';
+
+    const keywords = inputKeywords.value.split(',').map(k => k.trim());
+
+    console.log('Sending request with:', { keywords, emotion: selectedEmotion.value }); // 打印请求参数
+
+    const response = await fetch(`${API_BASE_URL}/api/textGenerate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        keywords: keywords.value.split(/[, ，]/),
-        emotion: emotion.value  
-      })
+      body: JSON.stringify({
+        keywords,
+        emotion: selectedEmotion.value
+      }),
     });
- 
-    const data = await response.json(); 
-    
-    if (!data.success)  throw new Error(data.error); 
-    
-    generatedText.value  = data.content.replace(/\n/g,  '<br>');
-    
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const data = await response.json();
+    console.log('Response data:', data); // 打印响应数据
+
+    generatedText.value = data.content; // 确保字段名与后端返回一致
   } catch (err) {
-    errorMessage.value  = `生成失败: ${err.message}`; 
+    error.value = `生成失败: ${err.message}`;
   } finally {
-    isLoading.value  = false;
+    isGenerating.value = false;
   }
 };
 </script>
- 
-<template>
-  <div class="generator">
-    <div class="input-group">
-      <input 
-        v-model="keywords"
-        placeholder="输入关键词（用逗号分隔）"
-        class="keyword-input"
-      >
-      <select v-model="emotion" class="emotion-select">
-        <option value="热血">热血</option>
-        <option value="温馨">温馨</option>
-      </select>
-      <button 
-        @click="generate"
-        :disabled="isLoading"
-        class="generate-btn"
-      >
-        {{ isLoading ? '生成中...' : '开始生成' }}
-      </button>
-    </div>
- 
-    <div v-if="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
- 
-    <div 
-      v-html="generatedText"
-      class="output-area"
-    ></div>
-  </div>
-</template>
- 
+
 <style scoped>
-.generator {
+.generator-card {
   max-width: 600px;
   margin: 2rem auto;
-  padding: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
 }
- 
+
 .input-group {
-  display: flex;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
- 
-.keyword-input {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
- 
-.emotion-select {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
- 
-.generate-btn {
-  padding: 0.5rem 1rem;
-  background: #007bff;
+
+button {
+  background: #4CAF50;
   color: white;
   border: none;
+  padding: 0.8rem 1.5rem;
   border-radius: 4px;
   cursor: pointer;
+  transition: opacity 0.2s;
 }
- 
-.generate-btn:disabled {
-  background: #6c757d;
+
+button:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
 }
- 
-.output-area {
-  border: 1px solid #ddd;
+
+.output-box {
+  margin-top: 1rem;
   padding: 1rem;
-  min-height: 200px;
+  background: #f8f9fa;
+  border-radius: 4px;
   white-space: pre-wrap;
-}
- 
-.error-message {
-  color: #dc3545;
-  margin: 1rem 0;
 }
 </style>
