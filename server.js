@@ -14,21 +14,15 @@ const app = express();
 // 添加 JSON 解析中间件
 app.use(express.json());
 
-const allowedOrigins = [
-  'https://art-platform-frontend-b96a.vercel.app',
-  'http://localhost:8080', // 添加本地开发支持
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS policy violation'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT'],
-  credentials: true,
+// 修改 CORS 配置 
+app.use(cors({ 
+  origin: [
+    /\.vercel\.app$/,
+    'http://localhost:[0-9]*'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true 
 }));
 
 const connectDB = async () => {
