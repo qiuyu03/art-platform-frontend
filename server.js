@@ -43,8 +43,7 @@ const initializeApp = async () => {
     
     // 规则加载（并发优化）
     await Promise.all([ 
-      loadRules(),
-      preheatAPIConnections() // 预先建立API连接 
+      loadRules()
     ]);
     
     // 路由挂载 
