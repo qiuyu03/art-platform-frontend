@@ -7,7 +7,7 @@
     { "src": "/api/(.*)", "dest": "/server.js" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
-  "frameworks": ["vue"],
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev"
+  "env": {
+    "FRAMEWORK": "vue"
+  }
 }
