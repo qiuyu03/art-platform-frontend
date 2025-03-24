@@ -43,8 +43,9 @@ const error = ref('');
 const emotionOptions = JSON.parse(process.env.VUE_APP_EMOTION_OPTIONS || '["默认","热血","悲伤"]');
 
 // 从环境变量加载后端地址
-// const API_BASE_URL = process.env.SERVER_PORT || 'http://localhost:3001';
-const API_BASE_URL = '/api'; // 使用相对路径
+const API_BASE_URL = process.env.NODE_ENV  === 'production' 
+  ? '/api' 
+  : 'http://localhost:3001/api';
 
 const handleGenerate = async () => {
   try {
