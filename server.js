@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { MongoClient } = require('mongodb');
 const textGenRouter = require('./api/textGenerate.js'); 
+console.log('[DEBUG]  textGenRouter 模块内容:', textGenRouter);
 const { loadRules } = require('./api/utils/ruleLoader.js'); 
  
 // ====================
@@ -67,7 +68,7 @@ function configureCORS(app) {
  
   app.use(cors({ 
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.has(origin))  {
+      if (!origin || origin === 'null' || allowedOrigins.has(origin))  {
         callback(null, true);
       } else {
         console.warn(`🚨  CORS阻断请求来源: ${origin}`);
@@ -98,6 +99,9 @@ async function connectDBWithRetry(retries) {
 }
  
 function mountRoutes() {
+  
+  console.log('[DEBUG]  挂载路由前 textGenRouter 类型:', typeof textGenRouter);
+  console.log('[DEBUG]  路由对象方法:', Object.keys(textGenRouter)); 
   // 业务路由 
   app.use('/api/textGenerate',  textGenRouter);
   
