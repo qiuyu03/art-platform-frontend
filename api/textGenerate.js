@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
     关键词：${keywords.join(', ')}
     要求：${rule.text?.keywords?.join('、') || ''}
     节奏：${rule.text?.叙事节奏 || '适中'}
-    字数限制：300字以内`;
+    字数限制：500字以内`;
 
     const response = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',

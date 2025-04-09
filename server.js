@@ -3,7 +3,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { MongoClient } = require('mongodb');
 const textGenRouter = require('./api/textGenerate.js'); 
-console.log('[DEBUG]  textGenRouter 模块内容:', textGenRouter);
+const imageGenRouter = require('./api/imageGenerate.js'); 
+const musicGenRouter = require('./api/musicGenerate.js');
 const { loadRules } = require('./api/utils/ruleLoader.js'); 
  
 // ====================
@@ -103,7 +104,9 @@ function mountRoutes() {
   console.log('[DEBUG]  挂载路由前 textGenRouter 类型:', typeof textGenRouter);
   console.log('[DEBUG]  路由对象方法:', Object.keys(textGenRouter)); 
   // 业务路由 
-  app.use('/api/textGenerate',  textGenRouter);
+  app.use('/api/textGenerate', textGenRouter);
+  app.use('/api/imageGenerate', imageGenRouter);
+  app.use('/api/musicGenerate', musicGenRouter);
   
   // 系统监控 
   app.get('/api/health',  (req, res) => {

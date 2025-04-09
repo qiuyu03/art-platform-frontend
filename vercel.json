@@ -3,5 +3,13 @@
   "builds": [
     { "src": "server.js", "use": "@vercel/node" }
   ],
-  "rewrites": [{ "source": "/api/(.*)", "destination": "/server.js"  }]
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/server.js" }
+  ],
+  "functions": {
+    "api/image-generator.js": {
+      "memory": 3008,
+      "maxDuration": 20
+    }
+  }
 }
