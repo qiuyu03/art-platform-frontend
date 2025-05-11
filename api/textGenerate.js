@@ -1,56 +1,77 @@
 const express = require('express');
 const router = express.Router();
-const { loadRules } = require('./utils/ruleLoader');
 const axios = require('axios');
+const { loadRules } = require('./utils/ruleLoader');
+const { generateImageService } = require('./imageGenerate');
+const { generateMusicService } = require('./musicGenerate');
+const multer = require('multer');
+const sharp = require('sharp');
+const Tesseract = require('tesseract.js');
 
-router.use((req, res, next) => {
-  if (req.body && req.body.imageParams) {
-    const { palette, style } = req.body.imageParams;
+// 配置上传文件的存储
+const upload = multer({ dest: 'uploads/' });
 
-    if (style === '水墨风') {
-      req.body.emotion = req.body.emotion || '古典';
-    }
+// 提取图片关键词（示例：通过OCR提取文本）
+router.post('/extractKeywordsFromImage', upload.single('image'), async (req, res) => {
+  const { file } = req;
 
-    if (palette === '冷色调') {
-      req.body.keywords = [...(req.body.keywords || []), '寒冷', '孤独'];
-    }
+  if (!file) {
+    return res.status(400).json({ success: false, error: '未上传图片' });
   }
 
-  next();
+  try {
+    // 使用OCR提取图片中的文字
+    const { data: { text } } = await Tesseract.recognize(file.path, 'eng', {
+      logger: (m) => console.log(m),
+    });
+
+    // 基本的关键词提取，可以用正则表达式等进行更复杂的处理
+    const keywords = text.split(/\s+/).filter(Boolean).slice(0, 5);  // 获取前5个关键词
+
+    res.json({ success: true, keywords });
+  } catch (err) {
+    res.status(500).json({ success: false, error: '图片解析失败' });
+  }
 });
 
+// 生成文本、图片和音乐的接口
 router.post('/', async (req, res) => {
-  const { keywords, emotion = 'default' } = req.body;
+  const { keywords, emotion = 'default', imageParams = {}, musicParams = {}, additionalText = '' } = req.body;
 
-  if (!Array.isArray(keywords)) {
+  if (!Array.isArray(keywords) || keywords.length === 0) {
     return res.status(400).json({
       success: false,
-      error: 'Expected an array of keywords.'
+      error: '参数错误：keywords 应为非空数组'
     });
   }
 
   try {
-    const rule = await loadRules(emotion); // 等待规则加载完成
+    const validEmotion = emotion === '默认' ? 'default' : emotion;
+    const rule = await loadRules({ emotion: validEmotion });
 
     if (!rule || !rule.text) {
-      console.error('无效规则:', rule);
+      console.error('❌ 无效规则:', rule);
       return res.status(500).json({
         success: false,
-        error: '无法获取有效的规则，请检查数据库'
+        error: '无法加载情绪规则'
       });
     }
 
-    const prompt = `根据以下要素创作内容：
-    关键词：${keywords.join(', ')}
-    要求：${rule.text?.keywords?.join('、') || ''}
-    节奏：${rule.text?.叙事节奏 || '适中'}
-    字数限制：500字以内`;
+    // ✨ 生成文本提示，包含上传提取的 additionalText
+    const textPrompt = `
+根据以下要素创作内容：
+关键词：${keywords.join(', ')}
+附加信息：${additionalText.slice(0, 500)}
+要求：${rule.text?.keywords?.join('、') || '逻辑清晰、表达生动'}
+节奏：${rule.text?.叙事节奏 || '适中'}
+字数限制：500字以内
+`;
 
     const response = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',
       {
         model: "deepseek-chat",
-        messages: [{ role: "user", content: prompt }]
+        messages: [{ role: "user", content: textPrompt }]
       },
       {
         headers: {
@@ -60,16 +81,36 @@ router.post('/', async (req, res) => {
       }
     );
 
+    console.log('💬 DeepSeek 返回结构:', JSON.stringify(response.data, null, 2));
+
+    const content = response.data?.choices?.[0]?.message?.content;
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      console.error('❌ 文本生成失败: 返回为空或结构异常', response.data);
+      return res.status(500).json({
+        success: false,
+        error: '文本生成失败，内容为空或格式异常'
+      });
+    }
+
+    const generatedText = content.trim();
+
+    const [imageResult, musicResult] = await Promise.all([
+      generateImageService({ ...imageParams, emotion: validEmotion, prompt: generatedText }),
+      generateMusicService({ ...musicParams, text: generatedText, keywords, emotion: validEmotion })
+    ]);
+
     res.json({
       success: true,
-      content: response.data.choices[0].message.content
+      content: generatedText,
+      image: imageResult,
+      music: musicResult
     });
 
   } catch (error) {
-    console.error('API 调用失败:', error.response?.data || error.message);
+    console.error('❌ 生成流程失败:', error.response?.data || error.message || error);
     res.status(500).json({
       success: false,
-      error: '生成失败，请检查输入参数和环境变量设置'
+      error: '生成失败，请检查日志和环境配置'
     });
   }
 });

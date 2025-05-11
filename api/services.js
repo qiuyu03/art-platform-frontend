@@ -16,7 +16,7 @@ export const generateImageService = async (payload) => {
 
 export const generateMusicService = async (payload) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/textGenerate`, payload); // 假设音乐生成使用 textGenerate 接口
+    const response = await axios.post(`${API_BASE_URL}/api/musicGenerate`, payload); 
     return response.data;
   } catch (error) {
     console.error('音乐生成失败:', error);

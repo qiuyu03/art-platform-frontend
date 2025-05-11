@@ -15,27 +15,22 @@
       <div class="param-module single-center">
         <label>情感选项</label>
         <select v-model="selectedEmotion" class="glow-select">
-          <option v-for="(emotion, idx) in emotionOptions" :key="idx" :value="emotion">{{ emotion }}</option>
+          <option v-for="(emotion, idx) in emotionOptions" :key="idx" :value="emotion">
+            {{ emotion }}
+          </option>
         </select>
       </div>
     </div>
 
     <!-- 生成中枢 -->
-    <button
-      @click="handleGenerate"
-      :disabled="isGenerating"
-      class="quantum-trigger"
-    >
+    <button @click="handleGenerate" :disabled="isGenerating" class="quantum-trigger">
       {{ isGenerating ? '时空解算中...' : '启动影像渲染' }}
     </button>
 
     <!-- 结果展示舱 -->
-    <div v-if="generatedText || imageUrl" class="output-pod">
-      <pre v-if="generatedText" class="hologram-output">{{ generatedText }}</pre>
-      <img v-if="imageUrl" :src="imageUrl" alt="生成的图片" class="generated-image" />
-      <button @click="download" class="data-saver">
-        ▼ 捕获时空片段
-      </button>
+    <div v-if="computedImageUrl" class="output-pod">
+      <img :src="computedImageUrl" alt="生成的图片" class="generated-image" />
+      <button @click="download" class="data-saver">▼ 捕获时空片段</button>
     </div>
 
     <!-- 异常警告层 -->
@@ -47,75 +42,91 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue'
 
-const emotionOptions = JSON.parse(process.env.VUE_APP_EMOTION_OPTIONS || '["默认","热血","悲伤"]');
+const props = defineProps({
+  prompt: String,
+  imageUrl: String,
+  steps: Number,
+  emotion: String
+});
 
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? ''
-  : 'http://localhost:3001';
+const emotionOptions = ['默认', '热血', '悲伤'];
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
 
 const inputKeywords = ref('');
 const selectedEmotion = ref('默认');
-const generatedText = ref(null);
-const imageUrl = ref(null);
+const imageUrlLocal = ref(null);
 const isGenerating = ref(false);
 const error = ref(null);
+
+const computedImageUrl = computed(() => {
+  console.log('Computed Image URL:', imageUrlLocal.value || props.imageUrl);
+  return imageUrlLocal.value || props.imageUrl;
+});
+
+watch(() => props.prompt, (val) => {
+  if (val) inputKeywords.value = val;
+}, { immediate: true });
+
+watch(() => props.emotion, (val) => {
+  if (val) selectedEmotion.value = val;
+}, { immediate: true });
 
 const handleGenerate = async () => {
   try {
     isGenerating.value = true;
     error.value = '';
 
-    const keywords = inputKeywords.value.split(',').map(k => k.trim()).join(', ');
+    const formattedPrompt = inputKeywords.value
+      .split(',')
+      .map(k => k.trim())
+      .join(', ');
 
     const requestBody = {
       imageParams: {
-        prompt: keywords,
-        steps: 40,
+        prompt: formattedPrompt,
+        steps: props.steps || 40,
         guidance_scale: 9.5,
-        height: 1024, // 统一使用 1024*1024，后端会强制设置
+        height: 1024,
         width: 1024,
-        emotion: selectedEmotion.value,
-      },
+        emotion: selectedEmotion.value
+      }
     };
+
+    console.log('Request data:', requestBody);
 
     const response = await fetch(`${API_BASE_URL}/api/imageGenerate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) throw new Error(await response.text());
 
     const data = await response.json();
-
-    if (data.image) {
-      imageUrl.value = data.image;
-      generatedText.value = null;
-    } else if (data.content) {
-      generatedText.value = data.content;
-      imageUrl.value = null;
+    if (data.imageUrl) {
+      imageUrlLocal.value = data.imageUrl;
+      console.log('Image generated successfully:', data.imageUrl);
+    } else {
+      throw new Error('未返回有效图像链接');
     }
   } catch (err) {
     error.value = `生成失败: ${err.message}`;
+    console.error('Image generation error:', err);
   } finally {
     isGenerating.value = false;
   }
 };
 
 const download = () => {
-  if (!imageUrl.value) return;
-
+  if (!computedImageUrl.value) return;
   const link = document.createElement('a');
-  link.href = imageUrl.value;
+  link.href = computedImageUrl.value;
   link.download = `quantum_${Date.now()}.png`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  if (imageUrl.value.startsWith('blob:')) {
-    URL.revokeObjectURL(imageUrl.value);
-  }
 };
 </script>
 

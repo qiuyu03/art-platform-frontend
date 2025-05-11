@@ -1,26 +1,74 @@
-const clientPromise = require('./db'); // 引入 db.js 中的 MongoDB 客户端
+const clientPromise = require('./db'); // 引入 MongoDB 客户端
 
-// 缓存规则数据
 let cachedRules = null;
 
-// 加载规则函数
-async function loadRules(emotion) {
+/**
+ * 预加载所有规则，仅执行一次（供初始化时调用）
+ */
+async function preloadRules() {
+  if (!cachedRules) {
+    try {
+      const client = await clientPromise;
+      const db = client.db('ArtPlatform');
+
+      const rules = await db
+        .collection('StyleRules')
+        .find({}, { projection: { _id: 0 } })
+        .toArray();
+
+      cachedRules = rules;
+      console.log(`✅ 成功预加载 ${rules.length} 条规则`);
+    } catch (error) {
+      console.error('❌ 规则预加载失败:', error);
+      throw error;
+    }
+  }
+}
+
+/**
+ * 加载匹配规则，支持模糊匹配 emotion + keyword
+ * @param {Object} options
+ * @param {string} options.emotion - 情绪标签，例如 "温暖"
+ * @param {string} [options.keyword] - 可选关键词，例如 "童话森林"
+ * @returns 匹配的规则对象
+ */
+async function loadRules({ emotion = 'default', keyword } = {}) {
   try {
-    if (cachedRules) return cachedRules.find(rule => rule.emotion === emotion) || cachedRules[0]; // 如果已缓存，按情感筛选
+    if (!cachedRules) {
+      await preloadRules();
+    }
 
-    const client = await clientPromise;
-    const db = client.db('ArtPlatform');
+    let matched = null;
 
-    const rules = await db.collection('StyleRules').find({}, { projection: { _id: 0 } }).toArray();
+    // 1. 精确匹配 emotion + keyword
+    if (keyword) {
+      matched = cachedRules.find(
+        rule => rule.emotion === emotion && rule.keyword === keyword
+      );
+    }
 
-    cachedRules = rules;
-    console.log(`成功加载 ${rules.length} 条规则`);
+    // 2. 模糊匹配 emotion + keyword（keyword 包含关系，不区分大小写）
+    if (!matched && keyword) {
+      const keywordLower = keyword.toLowerCase();
+      matched = cachedRules.find(
+        rule =>
+          rule.emotion === emotion &&
+          rule.keyword &&
+          rule.keyword.toLowerCase().includes(keywordLower)
+      );
+    }
 
-    return rules.find(rule => rule.emotion === emotion) || rules[0]; // 返回匹配的情感规则，或者默认规则
+    // 3. 单字段匹配 emotion
+    if (!matched) {
+      matched = cachedRules.find(rule => rule.emotion === emotion);
+    }
+
+    // 4. fallback：返回默认第一条规则
+    return matched || cachedRules[0];
   } catch (error) {
     console.error('规则加载失败:', error);
     throw error;
   }
 }
 
-module.exports = { loadRules };
+module.exports = { preloadRules, loadRules };
