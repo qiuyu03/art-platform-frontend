@@ -6,6 +6,7 @@ const textGenRouter = require('./api/textGenerate.js');
 const imageGenRouter = require('./api/imageGenerate.js'); 
 const musicGenRouter = require('./api/musicGenerate.js');
 const { preloadRules, loadRules } = require('./api/utils/ruleLoader.js');
+const rulesRouter = require('./api/rules.js');
 
 // ====================
 // 环境配置初始化 
@@ -108,6 +109,9 @@ function mountRoutes() {
   app.use('/api/textGenerate', textGenRouter);
   app.use('/api/imageGenerate', imageGenRouter);
   app.use('/api/musicGenerate', musicGenRouter);
+
+  // 规则定制接口
+  app.use('/api/rules', rulesRouter);
   
   
   // 系统监控 

@@ -5,6 +5,7 @@
       :current-theme="theme"
       @save="handleSave"
       @export="handleExport"
+      @open-rule-customizer="openRuleCustomizer"
     />
 
     <div class="generation-matrix">
@@ -51,6 +52,13 @@
 
     <!-- Rule Debugger 调试模块 -->
     <RuleDebugger class="dev-panel" @apply-rule="applyMatchedRule" />
+
+    <!-- Rule Customizer 组件，使用 v-if 控制显示 -->
+    <div v-if="isRuleCustomizerOpen" class="overlay" @click="closeRuleCustomizer">
+      <div class="rule-customizer-modal">
+        <RuleCustomizer @close="closeRuleCustomizer" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -63,6 +71,7 @@ import ImageGenerator from '@/components/generators/ImageGenerator.vue';
 import TextGenerator from '@/components/generators/TextGenerator.vue';
 import MusicGenerator from '@/components/generators/MusicGenerator.vue';
 import RuleDebugger from '@/components/RuleDebugger.vue';
+import RuleCustomizer from '@/components/RuleCustomizer.vue';
 
 const theme = ref('light');
 
@@ -88,7 +97,7 @@ const musicParams = reactive({
 });
 
 // ref 引用
-const musicGenerator = ref(null); // ✅ ref 名称统一为 musicGenerator（和模板一致）
+const musicGenerator = ref(null);
 
 // 主题切换
 const toggleTheme = () => {
@@ -172,6 +181,17 @@ const applyMatchedRule = (rule) => {
   if (rule.musicParams) Object.assign(musicParams, rule.musicParams);
 
   generationLog.value += `\n🎯 应用规则: ${rule.emotion}`;
+};
+
+// 控制 RuleCustomizer 组件的显示与隐藏
+const isRuleCustomizerOpen = ref(false);
+
+const openRuleCustomizer = () => {
+  isRuleCustomizerOpen.value = true;
+};
+
+const closeRuleCustomizer = () => {
+  isRuleCustomizerOpen.value = false;
 };
 
 onMounted(() => {
@@ -316,5 +336,29 @@ onMounted(() => {
   padding: 1rem;
   font-size: 0.85rem;
   color: #fff;
+}
+
+/* 覆盖层样式 */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* 模态框样式 */
+.rule-customizer-modal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 100%;
 }
 </style>

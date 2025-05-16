@@ -8,6 +8,7 @@
       <button class="nav-btn toggle-theme" @click="$emit('theme-change')">
         {{ currentTheme === 'dark' ? '☀️ 明亮模式' : '🌙 黑暗模式' }}
       </button>
+      <button class="nav-btn" @click="$emit('open-rule-customizer')">⚙️ 自定义规则</button>
     </div>
   </nav>
 </template>
