@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const { loadRules } = require('./utils/ruleLoader');
+const { saveWorkToDB } = require('./utils/workSaver');
 
 const router = express.Router();
 
@@ -97,6 +98,19 @@ async function generateImageService(inputParams) {
   if (!imageResult) {
     throw new Error('生成图像超时，请稍后重试');
   }
+
+  // 保存作品到数据库
+  const work = {
+    type: 'image',
+    prompt: fullPrompt,
+    rulesRef: rule._id, // 假设 rule 对象中有 _id 属性
+    timestamp: new Date(),
+    url: imageResult,
+    metadata: {
+        resolution: params.size
+    }
+  };
+  await saveWorkToDB(work);
 
   return {
     success: true,

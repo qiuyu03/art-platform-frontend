@@ -5,8 +5,8 @@ const { loadRules } = require('./utils/ruleLoader');
 const { generateImageService } = require('./imageGenerate');
 const { generateMusicService } = require('./musicGenerate');
 const multer = require('multer');
-const sharp = require('sharp');
 const Tesseract = require('tesseract.js');
+const { saveWorkToDB } = require('./utils/workSaver');
 
 // 配置上传文件的存储
 const upload = multer({ dest: 'uploads/' });
@@ -98,6 +98,19 @@ router.post('/', async (req, res) => {
       generateImageService({ ...imageParams, emotion: validEmotion, prompt: generatedText }),
       generateMusicService({ ...musicParams, text: generatedText, keywords, emotion: validEmotion })
     ]);
+
+    // 保存作品到数据库
+    const work = {
+      type: 'text',
+      prompt: textPrompt,
+      rulesRef: rule._id, // 假设 rule 对象中有 _id 属性
+      timestamp: new Date(),
+      url: generatedText,
+      metadata: {
+          wordCount: generatedText.split(' ').length
+      }
+    };
+    await saveWorkToDB(work);
 
     res.json({
       success: true,

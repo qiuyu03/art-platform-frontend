@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const { loadRules } = require('./utils/ruleLoader');
+const { saveWorkToDB } = require('./utils/workSaver');
 
 const router = express.Router();
 const BEATOVEN_API_BASE_URL = 'https://public-api.beatoven.ai/api/v1';
@@ -75,6 +76,19 @@ async function generateMusicService({ text = '', emotion = 'happy', tempo = 'med
   if (!isCompleted || !audioUrl) {
     throw new Error('生成超时或失败，请稍后重试');
   }
+
+  // 保存作品到数据库
+  const work = {
+    type: 'music',
+    prompt: description,
+    rulesRef: rule._id, // 假设 rule 对象中有 _id 属性
+    timestamp: new Date(),
+    url: audioUrl,
+    metadata: {
+        duration: duration / 1000
+    }
+  };
+  await saveWorkToDB(work);
 
   return {
     success: true,

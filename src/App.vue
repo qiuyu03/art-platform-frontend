@@ -54,7 +54,7 @@
     <RuleDebugger class="dev-panel" @apply-rule="applyMatchedRule" />
 
     <!-- Rule Customizer 组件，使用 v-if 控制显示 -->
-    <div v-if="isRuleCustomizerOpen" class="overlay" @click="closeRuleCustomizer">
+    <div v-if="isRuleCustomizerOpen" class="overlay" @click="handleOverlayClick">
       <div class="rule-customizer-modal">
         <RuleCustomizer @close="closeRuleCustomizer" />
       </div>
@@ -192,6 +192,13 @@ const openRuleCustomizer = () => {
 
 const closeRuleCustomizer = () => {
   isRuleCustomizerOpen.value = false;
+};
+
+const handleOverlayClick = (event) => {
+  // 判断点击的目标元素是否为 .overlay 元素本身
+  if (event.target === event.currentTarget) {
+    closeRuleCustomizer();
+  }
 };
 
 onMounted(() => {

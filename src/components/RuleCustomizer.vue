@@ -1,7 +1,7 @@
 <template>
     <div class="rule-customizer neural-card">
       <button class="close-button" @click="$emit('close')">×</button>
-      <h3 class="text-xl font-bold mb-2">🎨 规则定制</h3>
+      <h3 class="text-xl font-bold mb-2">🎨 自定义规则</h3>
   
       <div class="form-group">
         <label>关键词</label>
@@ -79,6 +79,23 @@
   const successMessage = ref(null);
   
   const saveRule = async () => {
+    // 表单验证
+    if (
+      !keyword.value ||
+      !emotion.value ||
+      !imageStyle.value ||
+      !musicStyle.value ||
+      !bpm.value ||
+      !chordType.value ||
+      !textTone.value ||
+      !textKeywords.value ||
+      !narrativePace.value
+    ) {
+      errorMessage.value = '请填写所有表单字段';
+      successMessage.value = null;
+      return;
+    }
+
     try {
       const rule = {
         keyword: keyword.value,
@@ -158,7 +175,7 @@
     border-radius: 0.5rem;
     border: none;
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: #000; /* 添加/修改：文字颜色设为黑色 */
   }
   
   .btn {
