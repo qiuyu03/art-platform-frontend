@@ -64,7 +64,8 @@ export default {
   data() {
     return {
       inputText: '',
-      selectedEmotion: 'happy',
+      // 更新情感选项，确保与后端关联矩阵中的情感标签一致
+      selectedEmotion: '欢快',
       selectedTempo: 'medium',
       selectedGenre: 'electronica',
       generatedMusic: null,
@@ -73,12 +74,17 @@ export default {
       musicParams: {
         duration: 60
       },
-      emotionOptions: ['happy', 'sad', 'epic', 'tense'],
+      // 更新情感选项，确保与后端关联矩阵中的情感标签一致
+      emotionOptions: ['宁静', '激昂', '忧郁', '欢快', '愤怒', '恐惧', '惊喜', '温柔'],
       emotionLabels: {
-        happy: '欢快',
-        sad: '悲伤',
-        epic: '史诗',
-        tense: '紧张'
+        宁静: '宁静',
+        激昂: '激昂',
+        忧郁: '忧郁',
+        欢快: '欢快',
+        愤怒: '愤怒',
+        恐惧: '恐惧',
+        惊喜: '惊喜',
+        温柔: '温柔'
       },
       tempoOptions: ['slow', 'medium', 'fast'],
       tempoLabels: {

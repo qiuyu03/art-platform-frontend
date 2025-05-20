@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const { loadRules } = require('./utils/ruleLoader');
 const { saveWorkToDB } = require('./utils/workSaver');
+const huggingface = require('@huggingface/inference');
 
 const router = express.Router();
 
@@ -16,6 +17,24 @@ const defaultParams = {
   prompt_extend: true,
   watermark: false
 };
+
+// 生成注意力掩码
+async function generateAttentionMask(prompt) {
+  const tokenizer = new huggingface.CLIPTokenizer({ modelName: 'openai/clip-vit-large-patch14' });
+  const textEncoder = new huggingface.CLIPTextModel({ modelName: 'openai/clip-vit-large-patch14' });
+  
+  const tokens = tokenizer(prompt);
+  const textFeatures = await textEncoder(tokens);
+  // 这里需要根据具体的 U-Net 结构和图像特征图进行点积运算
+  // 简化示例，假设已经有图像特征图 imageFeatures
+  const imageFeatures = []; 
+  const attentionMask = textFeatures.map((feature) => {
+    return imageFeatures.map((imgFeature) => {
+      return feature * imgFeature;
+    });
+  });
+  return attentionMask;
+}
 
 // 🎯 图像生成主逻辑
 async function generateImageService(inputParams) {
@@ -32,11 +51,15 @@ async function generateImageService(inputParams) {
 
   const fullPrompt = `${rule.text} ${params.prompt}`.trim();
 
+  // 生成注意力掩码
+  const attentionMask = await generateAttentionMask(fullPrompt);
+
   const requestData = {
     model: "wanx2.1-t2i-turbo",
     input: {
       prompt: fullPrompt,
       negative_prompt: "",
+      attention_mask: attentionMask // 添加注意力掩码
     },
     parameters: {
       size: params.size,

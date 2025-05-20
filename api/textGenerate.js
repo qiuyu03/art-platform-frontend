@@ -7,6 +7,7 @@ const { generateMusicService } = require('./musicGenerate');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
 const { saveWorkToDB } = require('./utils/workSaver');
+const sentiment = require('sentiment'); // 假设使用 sentiment 库进行情感分析
 
 // 配置上传文件的存储
 const upload = multer({ dest: 'uploads/' });
@@ -67,11 +68,21 @@ router.post('/', async (req, res) => {
 字数限制：500字以内
 `;
 
+    // 动态调整 temperature 参数
+    let temperature = 0;
+    const analysis = sentiment(textPrompt);
+    if (analysis.score > 0) {
+      temperature = 1.0; // 积极情绪
+    } else if (validEmotion === '严肃') {
+      temperature = 0.5; // 严肃场景
+    }
+
     const response = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',
       {
         model: "deepseek-chat",
-        messages: [{ role: "user", content: textPrompt }]
+        messages: [{ role: "user", content: textPrompt }],
+        temperature: temperature // 添加 temperature 参数
       },
       {
         headers: {
